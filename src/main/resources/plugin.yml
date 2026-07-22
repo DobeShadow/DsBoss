@@ -1,8 +1,8 @@
 name: CustomBoss
-version: 1.0.0
+version: 1.0.0-SNAPSHOT
 main: com.minemc.bossplugin.CustomBoss
 api-version: "1.21"
-author: MINEMC
+author: baqiwenye
 description: Custom BOSS plugin - configurable bosses with scheduled spawns, rewards, and broadcasts
 softdepend: [Vault]
 
