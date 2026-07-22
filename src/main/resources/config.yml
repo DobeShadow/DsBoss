@@ -1,0 +1,218 @@
+# ============================================
+# CustomBoss - 自定义BOSS插件配置
+# ============================================
+
+# 检测间隔（秒），每隔N秒检测一次是否到达生成时间
+check-interval: 30
+
+# 时区设置（默认为北京时间 Asia/Shanghai）
+timezone: "Asia/Shanghai"
+
+# 是否启用BOSS血条显示
+enable-boss-bar: true
+
+# 全局播报前缀
+broadcast-prefix: "&c&l[BOSS公告] "
+
+# ============================================
+# BOSS配置列表
+# 每个BOSS用一个唯一的ID标识
+# ============================================
+bosses:
+  # ---------- 示例BOSS 1: 远古巨龙 ----------
+  dragon_boss:
+    # 是否启用该BOSS
+    enabled: true
+    # BOSS实体类型: ZOMBIE, SKELETON, WITHER_SKELETON, BLAZE, ENDERMAN, WITCH,
+    #   PIGLIN_BRUTE, EVOKER, VINDICATOR, RAVAGER, WARDEN, ELDER_GUARDIAN 等
+    type: ZOMBIE
+    # BOSS显示名称（支持颜色代码&）
+    name: "&c&l⚔ 远古巨龙 ⚔"
+    # BOSS血量
+    health: 1000.0
+    # BOSS基础攻击力
+    damage: 12.0
+    # 生成位置
+    spawn-location:
+      world: world
+      x: 0.0
+      y: 64.0
+      z: 0.0
+    # 生成时间段（北京时间，HH:mm格式，可配置多个）
+    spawn-times:
+      - "12:00"
+      - "18:00"
+      - "21:00"
+    # BOSS装备（可选，留空表示不装备）
+    equipment:
+      helmet: DIAMOND_HELMET
+      chestplate: DIAMOND_CHESTPLATE
+      leggings: DIAMOND_LEGGINGS
+      boots: DIAMOND_BOOTS
+      main-hand: DIAMOND_SWORD
+      off-hand: ""
+    # BOSS是否免疫火焰伤害
+    fire-immune: true
+    # BOSS是否免疫摔落伤害
+    fall-immune: true
+    # BOSS的药水效果（可选）
+    potion-effects:
+      - type: SPEED
+        level: 1
+        duration: 999999
+      - type: INCREASE_DAMAGE
+        level: 2
+        duration: 999999
+
+    # ---------- 最后一击奖励 ----------
+    last-hit-rewards:
+      # Vault经济奖励（金币，需要Vault+经济插件）
+      economy: 1000.0
+      # 执行的命令列表（[player] 会被替换为玩家名）
+      commands:
+        - "give [player] diamond 5"
+        - "give [player] emerald 3"
+      # 发送给击杀者的消息
+      messages:
+        - "&a&l恭喜！&e你成功击杀了 &c{boss_name}&e，获得 &61000金币 &e和额外奖励！"
+
+    # ---------- 全服奖励 ----------
+    server-rewards:
+      # 每个在线玩家获得的金币（Vault）
+      economy: 200.0
+      # 对每个在线玩家执行的命令
+      commands: []
+      # 全服播报消息（击杀时）
+      broadcast:
+        - "&e{timezone}时间 &a{kill_time} &e整，全服在线玩家获得 &6200金币 &e奖励！"
+
+    # ---------- 掉落物（直接发放到每个参与攻击的玩家背包） ----------
+    drops:
+      - material: DIAMOND
+        amount: 5
+        chance: 1.0
+      - material: NETHERITE_SCRAP
+        amount: 2
+        chance: 0.5
+      - material: ENCHANTED_GOLDEN_APPLE
+        amount: 1
+        chance: 0.3
+      - material: NETHERITE_INGOT
+        amount: 1
+        chance: 0.1
+
+    # ---------- BOSS生成时全服播报 ----------
+    # 可用变量: {boss_name}, {boss_type}, {health}, {world}, {x}, {y}, {z}, {time}
+    broadcast-on-spawn:
+      - "&c&l[BOSS公告] &e一只 &c{boss_name} &e已生成！"
+      - "&c&l[BOSS公告] &e位置: &f{world} ({x}, {y}, {z})"
+      - "&c&l[BOSS公告] &e血量: &f{health}"
+      - "&c&l[BOSS公告] &e快来击杀获取丰厚奖励！"
+
+    # ---------- BOSS被击杀时全服播报 ----------
+    # 可用变量: {boss_name}, {killer}, {health}, {timezone}, {kill_time}
+    broadcast-on-death:
+      - "&c&l[BOSS公告] &6{killer} &e成功击杀了 &c{boss_name}&e！"
+      - "&c&l[BOSS公告] &e全服在线玩家获得金币奖励！"
+
+  # ---------- 示例BOSS 2: 暗影领主 ----------
+  shadow_lord:
+    enabled: false
+    type: WITHER_SKELETON
+    name: "&5&l☠ 暗影领主 ☠"
+    health: 2000.0
+    damage: 15.0
+    spawn-location:
+      world: world
+      x: 100.0
+      y: 70.0
+      z: 100.0
+    spawn-times:
+      - "14:00"
+      - "22:00"
+    equipment:
+      helmet: NETHERITE_HELMET
+      chestplate: NETHERITE_CHESTPLATE
+      leggings: NETHERITE_LEGGINGS
+      boots: NETHERITE_BOOTS
+      main-hand: NETHERITE_SWORD
+      off-hand: TOTEM_OF_UNDYING
+    fire-immune: true
+    fall-immune: true
+    potion-effects:
+      - type: SPEED
+        level: 2
+        duration: 999999
+    last-hit-rewards:
+      economy: 2000.0
+      commands:
+        - "give [player] netherite_ingot 2"
+      messages:
+        - "&a&l恭喜！&e你成功击杀了 &5{boss_name}&e，获得 &62000金币 &e和额外奖励！"
+    server-rewards:
+      economy: 500.0
+      commands: []
+      broadcast:
+        - "&e全服在线玩家获得 &6500金币 &e奖励！"
+    drops:
+      - material: NETHERITE_SCRAP
+        amount: 3
+        chance: 1.0
+      - material: WITHER_SKELETON_SKULL
+        amount: 1
+        chance: 0.5
+      - material: NETHER_STAR
+        amount: 1
+        chance: 0.05
+    broadcast-on-spawn:
+      - "&5&l[BOSS公告] &e一只 &5{boss_name} &e已生成！"
+      - "&5&l[BOSS公告] &e位置: &f{world} ({x}, {y}, {z})"
+      - "&5&l[BOSS公告] &e血量: &f{health}"
+    broadcast-on-death:
+      - "&5&l[BOSS公告] &6{killer} &e成功击杀了 &5{boss_name}&e！"
+
+  # ---------- 示例BOSS 3: 森林守卫 ----------
+  forest_guardian:
+    enabled: false
+    type: RAVAGER
+    name: "&a&l🌿 森林守卫 🌿"
+    health: 3000.0
+    damage: 20.0
+    spawn-location:
+      world: world
+      x: -100.0
+      y: 64.0
+      z: -100.0
+    spawn-times:
+      - "20:00"
+    equipment: {}
+    fire-immune: false
+    fall-immune: true
+    potion-effects:
+      - type: RESISTANCE
+        level: 1
+        duration: 999999
+    last-hit-rewards:
+      economy: 3000.0
+      commands:
+        - "give [player] diamond_block 1"
+      messages:
+        - "&a&l恭喜！&e你成功击杀了 &a{boss_name}&e，获得 &63000金币 &e和额外奖励！"
+    server-rewards:
+      economy: 800.0
+      commands: []
+      broadcast:
+        - "&e全服在线玩家获得 &6800金币 &e奖励！"
+    drops:
+      - material: EMERALD_BLOCK
+        amount: 2
+        chance: 1.0
+      - material: DIAMOND_BLOCK
+        amount: 1
+        chance: 0.5
+    broadcast-on-spawn:
+      - "&a&l[BOSS公告] &e一只 &a{boss_name} &e已生成！"
+      - "&a&l[BOSS公告] &e位置: &f{world} ({x}, {y}, {z})"
+      - "&a&l[BOSS公告] &e血量: &f{health}"
+    broadcast-on-death:
+      - "&a&l[BOSS公告] &6{killer} &e成功击杀了 &a{boss_name}&e！"

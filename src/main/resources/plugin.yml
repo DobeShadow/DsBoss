@@ -1,0 +1,22 @@
+name: CustomBoss
+version: 1.0.0
+main: com.minemc.bossplugin.CustomBoss
+api-version: "1.21"
+author: MINEMC
+description: Custom BOSS plugin - configurable bosses with scheduled spawns, rewards, and broadcasts
+softdepend: [Vault]
+
+commands:
+  customboss:
+    description: CustomBoss admin commands
+    usage: /<command> <reload|list|spawn|kill|info>
+    aliases: [cboss, cb]
+    permission: customboss.admin
+
+permissions:
+  customboss.admin:
+    description: Access to CustomBoss admin commands
+    default: op
+  customboss.use:
+    description: Allows interacting with boss events
+    default: true
