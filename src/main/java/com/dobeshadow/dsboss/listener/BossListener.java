@@ -1,7 +1,9 @@
-package com.minemc.bossplugin.listener;
+package com.dobeshadow.dsboss.listener;
 
-import com.minemc.bossplugin.CustomBoss;
-import com.minemc.bossplugin.boss.BossManager;
+import com.dobeshadow.dsboss.DsBoss;
+import com.dobeshadow.dsboss.boss.BossManager;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -21,12 +23,48 @@ import java.util.UUID;
  */
 public class BossListener implements Listener {
 
-    private final CustomBoss plugin;
+    private final DsBoss plugin;
     private final BossManager bossManager;
 
-    public BossListener(CustomBoss plugin, BossManager bossManager) {
+    public BossListener(DsBoss plugin, BossManager bossManager) {
         this.plugin = plugin;
         this.bossManager = bossManager;
+    }
+
+    /**
+     * Intercept damage for bosses with custom health (when server caps configured value).
+     * Subtracts from custom health and scales the entity's visual health proportionally.
+     */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onBossCustomHealthDamage(EntityDamageEvent event) {
+        if (!(event.getEntity() instanceof LivingEntity entity)) return;
+        if (!isBoss(entity)) return;
+
+        UUID uuid = entity.getUniqueId();
+        BossManager.ActiveBoss ab = bossManager.getActiveBosses().get(uuid);
+        if (ab == null || !ab.useCustomHealth()) return;
+
+        double finalDamage = event.getFinalDamage();
+        double newCustomHealth = Math.max(0, ab.getCustomHealth() - finalDamage);
+        ab.setCustomHealth(newCustomHealth);
+
+        if (newCustomHealth <= 0) {
+            // Boss defeated — schedule death on next tick to avoid event interference
+            event.setDamage(0);
+            plugin.getServer().getScheduler().runTask(plugin, () -> {
+                if (!entity.isDead()) {
+                    entity.setHealth(0);
+                }
+            });
+        } else {
+            // Scale visual entity health to reflect custom health percentage (keep at least 1 HP)
+            double ratio = newCustomHealth / ab.config().getHealth();
+            AttributeInstance attr = entity.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+            double entityMaxHealth = attr != null ? attr.getValue() : 1024.0;
+            double newHealth = 1.0 + ratio * (entityMaxHealth - 1.0);
+            event.setDamage(0);
+            entity.setHealth(Math.min(entityMaxHealth, newHealth));
+        }
     }
 
     /**
@@ -40,6 +78,9 @@ public class BossListener implements Listener {
         UUID uuid = entity.getUniqueId();
         BossManager.ActiveBoss ab = bossManager.getActiveBosses().get(uuid);
         if (ab == null) return;
+
+        // Refresh last-damage timestamp so idle-based auto-despawn won't kill a fought boss
+        ab.markDamaged();
 
         // Update boss bar
         plugin.getServer().getScheduler().runTask(plugin, bossManager::updateBossBars);

@@ -1,22 +1,22 @@
-name: CustomBoss
-version: 1.0.0-SNAPSHOT
-main: com.minemc.bossplugin.CustomBoss
+name: DsBoss
+version: 1.0.2
+main: com.dobeshadow.dsboss.DsBoss
 api-version: "1.21"
-author: baqiwenye
+author: DobeShadow
 description: Custom BOSS plugin - configurable bosses with scheduled spawns, rewards, and broadcasts
 softdepend: [Vault]
 
 commands:
-  customboss:
-    description: CustomBoss admin commands
+  dsboss:
+    description: DsBoss admin commands
     usage: /<command> <reload|list|spawn|kill|info>
     aliases: [cboss, cb]
-    permission: customboss.admin
+    permission: dsboss.admin
 
 permissions:
-  customboss.admin:
-    description: Access to CustomBoss admin commands
+  dsboss.admin:
+    description: Access to DsBoss admin commands
     default: op
-  customboss.use:
+  dsboss.use:
     description: Allows interacting with boss events
     default: true

@@ -1,8 +1,8 @@
-package com.minemc.bossplugin;
+package com.dobeshadow.dsboss;
 
-import com.minemc.bossplugin.boss.BossManager;
-import com.minemc.bossplugin.commands.BossCommand;
-import com.minemc.bossplugin.listener.BossListener;
+import com.dobeshadow.dsboss.boss.BossManager;
+import com.dobeshadow.dsboss.commands.BossCommand;
+import com.dobeshadow.dsboss.listener.BossListener;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.NamespacedKey;
 import org.bukkit.plugin.RegisteredServiceProvider;
@@ -11,7 +11,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.logging.Level;
 
 /**
- * CustomBoss - Custom BOSS plugin for Paper/Spigot 1.21+
+ * DsBoss - Custom BOSS plugin for Paper/Spigot 1.21+
  *
  * Features:
  * - Configurable boss types, names, and health
@@ -21,9 +21,9 @@ import java.util.logging.Level;
  * - Scheduled spawn times (Beijing time)
  * - Multi-line broadcast messages on spawn/death
  */
-public final class CustomBoss extends JavaPlugin {
+public final class DsBoss extends JavaPlugin {
 
-    private static CustomBoss instance;
+    private static DsBoss instance;
     private BossManager bossManager;
     private Economy economy;
     private NamespacedKey bossIdKey;
@@ -48,13 +48,13 @@ public final class CustomBoss extends JavaPlugin {
 
         // Register commands
         BossCommand cmd = new BossCommand(this, bossManager);
-        getCommand("customboss").setExecutor(cmd);
-        getCommand("customboss").setTabCompleter(cmd);
+        getCommand("dsboss").setExecutor(cmd);
+        getCommand("dsboss").setTabCompleter(cmd);
 
         // Load configurations (this also starts the scheduler)
         bossManager.load();
 
-        getLogger().info("CustomBoss v" + getPluginMeta().getVersion() + " 已启动！");
+        getLogger().info("DsBoss v" + getPluginMeta().getVersion() + " 已启动！");
     }
 
     @Override
@@ -63,7 +63,7 @@ public final class CustomBoss extends JavaPlugin {
             bossManager.cleanup();
         }
         instance = null;
-        getLogger().info("CustomBoss 已卸载！");
+        getLogger().info("DsBoss 已卸载！");
     }
 
     /**
@@ -88,7 +88,7 @@ public final class CustomBoss extends JavaPlugin {
 
     // ---- Static accessors ----
 
-    public static CustomBoss getInstance() {
+    public static DsBoss getInstance() {
         return instance;
     }
 

@@ -1,8 +1,8 @@
-package com.minemc.bossplugin.commands;
+package com.dobeshadow.dsboss.commands;
 
-import com.minemc.bossplugin.CustomBoss;
-import com.minemc.bossplugin.boss.BossConfig;
-import com.minemc.bossplugin.boss.BossManager;
+import com.dobeshadow.dsboss.DsBoss;
+import com.dobeshadow.dsboss.boss.BossConfig;
+import com.dobeshadow.dsboss.boss.BossManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -19,18 +19,18 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Admin command handler for CustomBoss.
+ * Admin command handler for DsBoss.
  * Subcommands: reload, list, spawn, kill, info
  */
 public class BossCommand implements CommandExecutor, TabCompleter {
 
-    private final CustomBoss plugin;
+    private final DsBoss plugin;
     private final BossManager bossManager;
 
-    private static final String PREFIX = "&8[&cCustomBoss&8] &7";
+    private static final String PREFIX = "&8[&cDsBoss&8] &7";
     private static final String NO_PERM = "&c你没有权限使用此命令！";
 
-    public BossCommand(CustomBoss plugin, BossManager bossManager) {
+    public BossCommand(DsBoss plugin, BossManager bossManager) {
         this.plugin = plugin;
         this.bossManager = bossManager;
     }
@@ -62,7 +62,7 @@ public class BossCommand implements CommandExecutor, TabCompleter {
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command,
                                                  @NotNull String alias, @NotNull String @NotNull [] args) {
-        if (!sender.hasPermission("customboss.admin")) return List.of();
+        if (!sender.hasPermission("dsboss.admin")) return List.of();
 
         if (args.length == 1) {
             return List.of("reload", "list", "spawn", "kill", "info").stream()
@@ -108,7 +108,7 @@ public class BossCommand implements CommandExecutor, TabCompleter {
     private void handleList(CommandSender sender) {
         if (!checkPerm(sender)) return;
         sendMsg(sender, "&8&m-------------------------------");
-        sendMsg(sender, "&c&lCustomBoss &7- BOSS列表");
+        sendMsg(sender, "&c&lDsBoss &7- BOSS列表");
         sendMsg(sender, "&7活跃/总数: &c" + bossManager.getActiveBossCount() + "&7/&a" + bossManager.getBossCount());
 
         for (BossConfig cfg : bossManager.getBossConfigs().values()) {
@@ -231,12 +231,12 @@ public class BossCommand implements CommandExecutor, TabCompleter {
     }
 
     private void sendHelp(CommandSender sender) {
-        if (!sender.hasPermission("customboss.admin")) {
+        if (!sender.hasPermission("dsboss.admin")) {
             sendMsg(sender, "&c你没有权限使用此命令！");
             return;
         }
         sendMsg(sender, "&8&m-------------------------------");
-        sendMsg(sender, "&c&lCustomBoss &7- 命令帮助");
+        sendMsg(sender, "&c&lDsBoss &7- 命令帮助");
         sendMsg(sender, "&e/boss reload &7- 重新加载配置");
         sendMsg(sender, "&e/boss list &7- 列出所有BOSS");
         sendMsg(sender, "&e/boss spawn <ID> [world x y z] &7- 生成BOSS");
@@ -246,7 +246,7 @@ public class BossCommand implements CommandExecutor, TabCompleter {
     }
 
     private boolean checkPerm(CommandSender sender) {
-        if (!sender.hasPermission("customboss.admin")) {
+        if (!sender.hasPermission("dsboss.admin")) {
             sendMsg(sender, PREFIX + NO_PERM);
             return false;
         }

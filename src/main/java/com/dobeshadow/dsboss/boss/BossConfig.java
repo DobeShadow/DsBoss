@@ -1,4 +1,4 @@
-package com.minemc.bossplugin.boss;
+package com.dobeshadow.dsboss.boss;
 
 import org.bukkit.Location;
 import org.bukkit.Material;

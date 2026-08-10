@@ -11,6 +11,7 @@
 - **全服奖励** — BOSS击杀后所有在线玩家获得金币/执行命令
 - **全服播报** — 生成和死亡时多行自定义播报，支持变量占位符
 - **BOSS血条** — 自动显示血量进度条
+- **超时清理** — BOSS 存活超时且无人挑战时自动移除，防止卡怪
 - **管理员命令** — 手动生成/击杀/查看/重载
 
 ## 构建
@@ -62,6 +63,11 @@ attribute:
 check-interval: 30          # 定时检测间隔（秒）
 timezone: "Asia/Shanghai"   # 时区
 enable-boss-bar: true       # 显示BOSS血条
+
+auto-despawn:               # 超时清理（可选）
+  minutes: 120              # 存活超时（分钟），0 = 不清理
+  idle-minutes: 10          # 最后被攻击空闲多久后清理（0 = 到点直接清）
+  broadcast: "&e{boss_name} &7长时间无人挑战，已消失……"
 
 bosses:
   dragon_boss:              # BOSS唯一ID

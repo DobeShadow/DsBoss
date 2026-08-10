@@ -1,6 +1,6 @@
-package com.minemc.bossplugin.boss;
+package com.dobeshadow.dsboss.boss;
 
-import com.minemc.bossplugin.CustomBoss;
+import com.dobeshadow.dsboss.DsBoss;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -27,6 +27,7 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -42,7 +43,7 @@ import java.util.logging.Level;
  */
 public class BossManager {
 
-    private final CustomBoss plugin;
+    private final DsBoss plugin;
     private final Map<String, BossConfig> bossConfigs = new HashMap<>();
     private final Map<UUID, ActiveBoss> activeBosses = new HashMap<>();
     private final Set<String> spawnedTimeSlots = new HashSet<>();
@@ -52,8 +53,11 @@ public class BossManager {
     private ZoneId timezone;
     private String broadcastPrefix;
     private boolean enableBossBar;
+    private int despawnAfterMinutes;
+    private int despawnIdleMinutes;
+    private String despawnBroadcast;
 
-    public BossManager(CustomBoss plugin) {
+    public BossManager(DsBoss plugin) {
         this.plugin = plugin;
     }
 
@@ -84,6 +88,18 @@ public class BossManager {
         }
         broadcastPrefix = colorize(config.getString("broadcast-prefix", "&c&l[BOSS公告] "));
         enableBossBar = config.getBoolean("enable-boss-bar", true);
+
+        // Auto-despawn settings
+        ConfigurationSection despawnSection = config.getConfigurationSection("auto-despawn");
+        if (despawnSection != null) {
+            despawnAfterMinutes = despawnSection.getInt("minutes", 120);
+            despawnIdleMinutes = despawnSection.getInt("idle-minutes", 10);
+            despawnBroadcast = despawnSection.getString("broadcast", "");
+        } else {
+            despawnAfterMinutes = 0;
+            despawnIdleMinutes = 10;
+            despawnBroadcast = "";
+        }
 
         ConfigurationSection bossesSection = config.getConfigurationSection("bosses");
         if (bossesSection == null) {
@@ -172,6 +188,10 @@ public class BossManager {
         LivingEntity entity;
         try {
             entity = (LivingEntity) world.spawnEntity(loc, entityType);
+            if (entity == null) {
+                plugin.getLogger().warning("Boss '" + bossId + "' 生成失败: 实体被取消 (WorldGuard 区域 flag 或其它插件拦截)");
+                return false;
+            }
         } catch (Exception e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to spawn boss '" + bossId + "'", e);
             return false;
@@ -185,12 +205,13 @@ public class BossManager {
         entity.setCustomName(coloredName);
         entity.setCustomNameVisible(true);
 
-        // Set max health and heal to full
+        // Set max health – server respects spigot.yml max-health setting
         AttributeInstance maxHealthAttr = entity.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+        double configuredHealth = cfg.getHealth();
         if (maxHealthAttr != null) {
-            maxHealthAttr.setBaseValue(cfg.getHealth());
+            maxHealthAttr.setBaseValue(configuredHealth);
         }
-        entity.setHealth(cfg.getHealth());
+        entity.setHealth(configuredHealth);
 
         // Set attack damage
         AttributeInstance attackAttr = entity.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE);
@@ -246,8 +267,11 @@ public class BossManager {
             bossBar.setVisible(true);
         }
 
-        // Track the active boss
+        // Track the active boss – enable custom health tracking only when server cap is lower than configured
         ActiveBoss activeBoss = new ActiveBoss(cfg, entity, bossBar);
+        if (entity.getHealth() < configuredHealth) {
+            activeBoss.setCustomHealth(configuredHealth);
+        }
         activeBosses.put(entity.getUniqueId(), activeBoss);
 
         // Broadcast spawn messages
@@ -377,7 +401,10 @@ public class BossManager {
     private void startScheduler() {
         // Check every checkInterval seconds
         long ticks = checkInterval * 20L;
-        schedulerTask = Bukkit.getScheduler().runTaskTimer(plugin, this::checkSpawnTimes, ticks, ticks);
+        schedulerTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            checkSpawnTimes();
+            checkDespawn();
+        }, ticks, ticks);
         plugin.getLogger().info("Scheduler started (check interval: " + checkInterval + "s, timezone: " + timezone + ")");
     }
 
@@ -430,6 +457,56 @@ public class BossManager {
         activeBosses.clear();
     }
 
+    /**
+     * Clean up bosses that have been alive too long without being fought.
+     * Runs on the scheduler alongside spawn checks.
+     */
+    private void checkDespawn() {
+        if (despawnAfterMinutes <= 0) return;
+
+        long now = System.currentTimeMillis();
+        long maxAliveMs = despawnAfterMinutes * 60_000L;
+        long idleLimitMs = despawnIdleMinutes * 60_000L;
+
+        List<UUID> deadCleanup = new ArrayList<>();
+        List<UUID> toDespawn = new ArrayList<>();
+        for (Map.Entry<UUID, ActiveBoss> entry : activeBosses.entrySet()) {
+            ActiveBoss ab = entry.getValue();
+            if (ab.entity.isDead()) {
+                deadCleanup.add(entry.getKey());
+                continue;
+            }
+            // Must have been alive past the timeout
+            if (now - ab.getSpawnTime() < maxAliveMs) continue;
+            // If idle grace is enabled, only despawn when no one attacked recently
+            if (despawnIdleMinutes > 0 && now - ab.getLastDamageTime() < idleLimitMs) continue;
+            toDespawn.add(entry.getKey());
+        }
+
+        // Silently clean up dead entries (no broadcast, just remove bar)
+        for (UUID uuid : deadCleanup) {
+            ActiveBoss ab = activeBosses.remove(uuid);
+            if (ab != null) removeBossBar(ab);
+        }
+
+        for (UUID uuid : toDespawn) {
+            ActiveBoss ab = activeBosses.remove(uuid);
+            if (ab != null) despawnBoss(ab);
+        }
+    }
+
+    private void despawnBoss(ActiveBoss ab) {
+        if (despawnBroadcast != null && !despawnBroadcast.isEmpty()) {
+            String msg = formatPlaceholders(despawnBroadcast, ab.config, ab.entity, null);
+            Bukkit.broadcastMessage(broadcastPrefix + msg);
+        }
+        removeBossBar(ab);
+        if (!ab.entity.isDead()) {
+            ab.entity.remove();
+        }
+        plugin.getLogger().info("Boss '" + ab.config.getId() + "' 超时无人挑战已清理 (存活 " + despawnAfterMinutes + " 分钟)");
+    }
+
     private void removeBossBar(ActiveBoss ab) {
         if (ab.bossBar != null) {
             ab.bossBar.removeAll();
@@ -452,7 +529,13 @@ public class BossManager {
         Location loc = entity.getLocation();
         ZonedDateTime now = ZonedDateTime.now(timezone);
 
-        double displayHealth = entity.getHealth();
+        double displayHealth;
+        ActiveBoss ab = activeBosses.get(entity.getUniqueId());
+        if (ab != null && ab.useCustomHealth()) {
+            displayHealth = ab.getCustomHealth();
+        } else {
+            displayHealth = entity.getHealth();
+        }
         double displayMaxHealth = cfg.getHealth();
 
         return colorize(msg
@@ -539,18 +622,23 @@ public class BossManager {
     // ==================== ActiveBoss Class ====================
 
     /**
-     * Tracks an active (spawned) boss with custom health support (>1024).
+     * Tracks an active (spawned) boss with custom health support when server caps the configured value.
      */
     public static class ActiveBoss {
         private final BossConfig config;
         private final LivingEntity entity;
         private final BossBar bossBar;
         private final Set<UUID> participants = new HashSet<>();
+        private final long spawnTime;
+        private volatile long lastDamageTime;
+        private double customHealth;
 
         public ActiveBoss(BossConfig config, LivingEntity entity, BossBar bossBar) {
             this.config = config;
             this.entity = entity;
             this.bossBar = bossBar;
+            this.spawnTime = System.currentTimeMillis();
+            this.lastDamageTime = this.spawnTime;
         }
 
         public BossConfig config() { return config; }
@@ -558,6 +646,12 @@ public class BossManager {
         public BossBar bossBar() { return bossBar; }
         public Set<UUID> participants() { return participants; }
         public void addParticipant(UUID playerId) { participants.add(playerId); }
+        public long getSpawnTime() { return spawnTime; }
+        public long getLastDamageTime() { return lastDamageTime; }
+        public void markDamaged() { lastDamageTime = System.currentTimeMillis(); }
+        public double getCustomHealth() { return customHealth; }
+        public void setCustomHealth(double health) { this.customHealth = health; }
+        public boolean useCustomHealth() { return customHealth > 0; }
     }
 
     /**
@@ -566,11 +660,13 @@ public class BossManager {
     public void updateBossBars() {
         for (ActiveBoss ab : activeBosses.values()) {
             if (ab.bossBar != null && !ab.entity.isDead()) {
-                double progress = Math.max(0.0, Math.min(1.0, ab.entity.getHealth() / ab.config.getHealth()));
+                double currentHealth = ab.useCustomHealth() ? ab.getCustomHealth() : ab.entity.getHealth();
+                double maxHealth = ab.config.getHealth();
+                double progress = Math.max(0.0, Math.min(1.0, currentHealth / maxHealth));
                 ab.bossBar.setProgress(progress);
                 String title = colorize(ab.config.getDisplayName() + " &7[&c"
-                        + String.format("%.0f", ab.entity.getHealth()) + "&7/&a"
-                        + String.format("%.0f", ab.config.getHealth()) + "&7]");
+                        + String.format("%.0f", currentHealth) + "&7/&a"
+                        + String.format("%.0f", maxHealth) + "&7]");
                 ab.bossBar.setTitle(title);
             }
         }
