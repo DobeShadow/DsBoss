@@ -44,6 +44,13 @@ public class BossListener implements Listener {
         BossManager.ActiveBoss ab = bossManager.getActiveBosses().get(uuid);
         if (ab == null || !ab.useCustomHealth()) return;
 
+        // Track the last player attacker so last-hit rewards work even though we kill via setHealth(0)
+        if (event instanceof EntityDamageByEntityEvent ede) {
+            if (ede.getDamager() instanceof Player player) {
+                ab.setLastAttacker(player);
+            }
+        }
+
         double finalDamage = event.getFinalDamage();
         double newCustomHealth = Math.max(0, ab.getCustomHealth() - finalDamage);
         ab.setCustomHealth(newCustomHealth);
@@ -105,6 +112,14 @@ public class BossListener implements Listener {
         if (!isBoss(entity)) return;
 
         Player killer = entity.getKiller();
+        if (killer == null) {
+            // Custom-health bosses die via setHealth(0), so getKiller() is null.
+            // Fall back to the last recorded player attacker to grant last-hit rewards.
+            BossManager.ActiveBoss ab = bossManager.getActiveBosses().get(entity.getUniqueId());
+            if (ab != null) {
+                killer = ab.getLastAttacker();
+            }
+        }
         bossManager.onBossDeath(entity, killer);
 
         // We handle drops ourselves (via participant tracking)

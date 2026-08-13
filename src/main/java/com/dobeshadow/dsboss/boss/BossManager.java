@@ -632,6 +632,7 @@ public class BossManager {
         private final long spawnTime;
         private volatile long lastDamageTime;
         private double customHealth;
+        private volatile Player lastAttacker;
 
         public ActiveBoss(BossConfig config, LivingEntity entity, BossBar bossBar) {
             this.config = config;
@@ -652,6 +653,8 @@ public class BossManager {
         public double getCustomHealth() { return customHealth; }
         public void setCustomHealth(double health) { this.customHealth = health; }
         public boolean useCustomHealth() { return customHealth > 0; }
+        public Player getLastAttacker() { return lastAttacker; }
+        public void setLastAttacker(Player player) { this.lastAttacker = player; }
     }
 
     /**
