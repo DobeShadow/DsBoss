@@ -131,7 +131,7 @@ public class BossCommand implements CommandExecutor, TabCompleter {
         if (!checkPerm(sender)) return;
 
         if (args.length < 2) {
-            sendMsg(sender, PREFIX + "&c用法: /boss spawn <BOSS_ID> [world x y z]");
+            sendMsg(sender, PREFIX + "&c用法: /dsboss spawn <BOSS_ID> [world x y z]");
             return;
         }
 
@@ -144,7 +144,7 @@ public class BossCommand implements CommandExecutor, TabCompleter {
 
         Location customLoc = null;
         if (args.length >= 6) {
-            // /boss spawn <id> <world> <x> <y> <z>
+            // /dsboss spawn <id> <world> <x> <y> <z>
             String worldName = args[2];
             World world = Bukkit.getWorld(worldName);
             if (world == null) {
@@ -161,7 +161,7 @@ public class BossCommand implements CommandExecutor, TabCompleter {
                 return;
             }
         } else if (args.length == 5 || args.length == 3 || args.length == 4) {
-            sendMsg(sender, PREFIX + "&c用法: /boss spawn <BOSS_ID> [world x y z]");
+            sendMsg(sender, PREFIX + "&c用法: /dsboss spawn <BOSS_ID> [world x y z]");
             return;
         }
 
@@ -181,7 +181,7 @@ public class BossCommand implements CommandExecutor, TabCompleter {
         if (!checkPerm(sender)) return;
 
         if (args.length < 2) {
-            sendMsg(sender, PREFIX + "&c用法: /boss kill <BOSS_ID>");
+            sendMsg(sender, PREFIX + "&c用法: /dsboss kill <BOSS_ID>");
             return;
         }
 
@@ -198,7 +198,7 @@ public class BossCommand implements CommandExecutor, TabCompleter {
         if (!checkPerm(sender)) return;
 
         if (args.length < 2) {
-            sendMsg(sender, PREFIX + "&c用法: /boss info <BOSS_ID>");
+            sendMsg(sender, PREFIX + "&c用法: /dsboss info <BOSS_ID>");
             return;
         }
 
@@ -237,11 +237,11 @@ public class BossCommand implements CommandExecutor, TabCompleter {
         }
         sendMsg(sender, "&8&m-------------------------------");
         sendMsg(sender, "&c&lDsBoss &7- 命令帮助");
-        sendMsg(sender, "&e/boss reload &7- 重新加载配置");
-        sendMsg(sender, "&e/boss list &7- 列出所有BOSS");
-        sendMsg(sender, "&e/boss spawn <ID> [world x y z] &7- 生成BOSS");
-        sendMsg(sender, "&e/boss kill <ID> &7- 强制击杀BOSS");
-        sendMsg(sender, "&e/boss info <ID> &7- 查看BOSS详情");
+        sendMsg(sender, "&e/dsboss reload &7- 重新加载配置");
+        sendMsg(sender, "&e/dsboss list &7- 列出所有BOSS");
+        sendMsg(sender, "&e/dsboss spawn <ID> [world x y z] &7- 生成BOSS");
+        sendMsg(sender, "&e/dsboss kill <ID> &7- 强制击杀BOSS");
+        sendMsg(sender, "&e/dsboss info <ID> &7- 查看BOSS详情");
         sendMsg(sender, "&8&m-------------------------------");
     }
 
