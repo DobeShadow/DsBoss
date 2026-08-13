@@ -235,14 +235,14 @@ public class BossCommand implements CommandExecutor, TabCompleter {
             sendMsg(sender, "&c你没有权限使用此命令！");
             return;
         }
-        sendMsg(sender, "&8&m-------------------------------");
-        sendMsg(sender, "&c&lDsBoss &7- 命令帮助");
-        sendMsg(sender, "&e/dsboss reload &7- 重新加载配置");
-        sendMsg(sender, "&e/dsboss list &7- 列出所有BOSS");
-        sendMsg(sender, "&e/dsboss spawn <ID> [world x y z] &7- 生成BOSS");
-        sendMsg(sender, "&e/dsboss kill <ID> &7- 强制击杀BOSS");
-        sendMsg(sender, "&e/dsboss info <ID> &7- 查看BOSS详情");
-        sendMsg(sender, "&8&m-------------------------------");
+        sendMsg(sender, "");
+        sendMsg(sender, "&8[&3DsBoss&8] &3BOSS 命令:");
+        sendMsg(sender, "&f/dsboss &freload &7- &8重新加载配置");
+        sendMsg(sender, "&f/dsboss &flist &7- &8列出所有BOSS");
+        sendMsg(sender, "&f/dsboss &fspawn &7[&8ID&7] &7[&8世界 x y z&7] &7- &8生成BOSS");
+        sendMsg(sender, "&f/dsboss &fkill &7[&8ID&7] &7- &8强制击杀BOSS");
+        sendMsg(sender, "&f/dsboss &finfo &7[&8ID&7] &7- &8查看BOSS详情");
+        sendMsg(sender, "");
     }
 
     private boolean checkPerm(CommandSender sender) {
