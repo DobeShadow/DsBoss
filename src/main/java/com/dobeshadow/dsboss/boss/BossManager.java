@@ -305,10 +305,16 @@ public class BossManager {
     public void onBossDeath(LivingEntity entity, Player killer) {
         UUID uuid = entity.getUniqueId();
         ActiveBoss ab = activeBosses.remove(uuid);
-        if (ab == null) return;
 
-        BossConfig cfg = ab.config;
-        removeBossBar(ab);
+        BossConfig cfg = ab != null ? ab.config : configFromEntity(entity);
+        if (cfg == null) {
+            plugin.getLogger().warning("BOSS死亡但找不到对应配置 (UUID=" + uuid + ")，已跳过奖励发放");
+            return;
+        }
+
+        if (ab != null) {
+            removeBossBar(ab);
+        }
 
         // Clear potion effects
         entity.clearActivePotionEffects();
@@ -351,10 +357,29 @@ public class BossManager {
         broadcastBossEvent(cfg.getBroadcastOnDeath(), cfg, entity, killer);
 
         // --- Drops: give to every participant player ---
-        giveDropsToParticipants(ab, cfg);
+        if (ab != null) {
+            giveDropsToParticipants(ab, cfg);
+        } else if (killer != null) {
+            // Fallback: if the active record was lost, still grant the killer's drops
+            giveDropsToPlayer(killer, cfg);
+        }
 
         plugin.getLogger().info("Boss '" + cfg.getId() + "' was killed by "
                 + (killer != null ? killer.getName() : "unknown") + "!");
+    }
+
+    /**
+     * Resolve a boss config from the entity's persistent data (fallback when the active record is missing).
+     */
+    private BossConfig configFromEntity(LivingEntity entity) {
+        try {
+            String bossId = entity.getPersistentDataContainer()
+                    .get(plugin.getBossIdKey(), PersistentDataType.STRING);
+            if (bossId == null) return null;
+            return bossConfigs.get(bossId);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /**
@@ -583,6 +608,20 @@ public class BossManager {
                 for (ItemStack left : leftover.values()) {
                     player.getWorld().dropItemNaturally(player.getLocation(), left);
                 }
+            }
+        }
+    }
+
+    private void giveDropsToPlayer(Player player, BossConfig cfg) {
+        if (player == null || !player.isOnline()) return;
+
+        for (BossConfig.DropConfig drop : cfg.getDrops()) {
+            if (!(ThreadLocalRandom.current().nextDouble() < drop.chance())) continue;
+
+            ItemStack item = new ItemStack(drop.material(), drop.amount());
+            var leftover = player.getInventory().addItem(item);
+            for (ItemStack left : leftover.values()) {
+                player.getWorld().dropItemNaturally(player.getLocation(), left);
             }
         }
     }
